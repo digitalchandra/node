@@ -81,22 +81,6 @@ exports.createPerson = async (req, res) => {
 
 
 
-// GET TREE
-exports.getTree = async (req, res) => {
-
-  try {
-
-    const persons = await Person.find().populate("children");
-
-    res.json(persons);
-
-  } catch (error) {
-
-    res.status(500).json({ message: error.message });
-
-  }
-
-};
 
 
 
@@ -129,13 +113,18 @@ exports.updatePerson = async (req, res) => {
 
 };
 
-// MARRY PERSON
-exports.marry = async (req, res) => {
+exports.addSpouse = async (req, res) => {
 
     try {
   
       const { id } = req.params;
-      const { spouse } = req.body;
+      const { spouseName } = req.body;
+  
+      if (!spouseName) {
+        return res.status(400).json({
+          message: "Spouse name is required"
+        });
+      }
   
       const person = await Person.findById(id);
   
@@ -146,11 +135,14 @@ exports.marry = async (req, res) => {
       }
   
       person.married = true;
-      person.spouse = spouse;
+      person.spouse = spouseName;
   
       await person.save();
   
-      res.json(person);
+      res.json({
+        message: "Spouse added successfully",
+        person
+      });
   
     } catch (error) {
   
@@ -159,9 +151,7 @@ exports.marry = async (req, res) => {
       });
   
     }
-  
   };
-
 
 
 // DELETE PERSON

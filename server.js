@@ -22,6 +22,11 @@ app.get("/", (req, res) => {
     res.send("Family Tree API Running");
 });
 
+app.post("/test", (req, res) => {
+    console.log(req.body);
+    res.json(req.body);
+  });
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {

@@ -8,24 +8,31 @@ const auth = require("../middleware/authMiddleware"); // IMPORTANT
 const {
   createPerson,
   getTree,
-  marry,
   updatePerson,
+  addSpouse,
   deletePerson
 } = require("../controllers/personController");
 
 
-// public
+// public get  api 
 router.get("/tree", getTree);
 
 
-// protected routes
+// post API
 router.post(
   "/add",
-  auth,                     // MUST be first
+  auth,
   role("ADMIN","SUPER_ADMIN"),
   upload.single("profileImage"),
   createPerson
 );
+
+router.put(
+    "/add-spouse/:id",
+    auth,
+    role("ADMIN","SUPER_ADMIN"),
+    addSpouse
+  );
 
 router.put(
   "/update/:id",
@@ -42,11 +49,5 @@ router.delete(
   deletePerson
 );
 
-router.put(
-  "/marry/:id",
-  auth,
-  role("ADMIN","SUPER_ADMIN"),
-  marry
-);
 
 module.exports = router;

@@ -21,7 +21,18 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ["SUPER_ADMIN", "ADMIN", "USER"],
         default: "USER"
-    }
+    },
+
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+
+    verificationToken: String,
+
+    resetPasswordToken: String,
+
+    resetPasswordExpire: Date
 
 }, { timestamps: true });
 
