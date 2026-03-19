@@ -34,13 +34,23 @@ router.put(
     addSpouse
   );
 
-router.put(
+  router.put(
+    "/update/:id",
+    auth,
+    role("ADMIN","SUPER_ADMIN"),
+    upload.single("profileImage"),
+    updatePerson
+  );
+
+router.post(
   "/update/:id",
   auth,
   role("ADMIN","SUPER_ADMIN"),
   upload.single("profileImage"),
   updatePerson
 );
+
+
 
 router.delete(
   "/delete/:id",

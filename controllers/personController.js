@@ -22,6 +22,8 @@ exports.getTree = async (req, res) => {
             spouse: person.spouse,
             married: person.married,
             profileImage: person.profileImage,
+            details: person.details,
+            contact: person.contact,
             children: children
           });
   
@@ -47,14 +49,15 @@ exports.createPerson = async (req, res) => {
 
   try {
 
-    const { name, gender, parent } = req.body;
+    const { name, gender, parent, details, contact } = req.body;
 
     const profileImage = req.file ? req.file.path : null;
 
     const person = new Person({
       name,
-      gender,
-      parent,
+      gender: gender.toLowerCase(), 
+      parent: parent || null,
+      details: details || "",
       profileImage
     });
 
@@ -63,9 +66,19 @@ exports.createPerson = async (req, res) => {
     if (parent) {
 
       const parentPerson = await Person.findById(parent);
-
+    
+      if (!parentPerson) {
+        return res.status(404).json({ message: "Parent not found" });
+      }
+    
+      //  Restrict female (daughter)
+      if (parentPerson.gender === "female") {
+        return res.status(400).json({
+          message: "Cannot add child to a daughter"
+        });
+      }
+    
       parentPerson.children.push(person._id);
-
       await parentPerson.save();
     }
 
@@ -113,50 +126,67 @@ exports.updatePerson = async (req, res) => {
 
 };
 
-exports.addSpouse = async (req, res) => {
+// ad suppose 
 
-    try {
-  
-      const { id } = req.params;
-      const { spouseName } = req.body;
-  
-      if (!spouseName) {
-        return res.status(400).json({
-          message: "Spouse name is required"
-        });
-      }
-  
-      const person = await Person.findById(id);
-  
-      if (!person) {
-        return res.status(404).json({
-          message: "Person not found"
-        });
-      }
-  
-      person.married = true;
-      person.spouse = spouseName;
-  
-      await person.save();
-  
-      res.json({
-        message: "Spouse added successfully",
-        person
+exports.addSpouse = async (req, res) => {
+  try {
+
+    const { id } = req.params;
+    const { spouseName } = req.body;
+
+    if (!spouseName) {
+      return res.status(400).json({
+        message: "Spouse name is required"
       });
-  
-    } catch (error) {
-  
-      res.status(500).json({
-        message: error.message
-      });
-  
     }
-  };
+
+    const person = await Person.findById(id);
+
+    if (!person) {
+      return res.status(404).json({
+        message: "Person not found"
+      });
+    }
+
+    // Auto gender-based label
+    if (person.gender === "female") {
+      person.spouse = spouseName; // husband
+    } else {
+      person.spouse = spouseName; // wife
+    }
+
+    person.married = true;
+
+    await person.save();
+
+    res.json({
+      message: "Spouse added successfully",
+      person
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message
+    });
+
+  }
+};
 
 
 // DELETE PERSON
-exports.deletePerson = async (req, res) => {
 
+const deleteRecursively = async (personId) => {
+  const children = await Person.find({ parent: personId });
+
+  for (let child of children) {
+    await deleteRecursively(child._id);
+  }
+
+  await Person.findByIdAndDelete(personId);
+};
+
+exports.deletePerson = async (req, res) => {
   try {
 
     const { id } = req.params;
@@ -169,27 +199,25 @@ exports.deletePerson = async (req, res) => {
       });
     }
 
+    // Remove from parent
     if (person.parent) {
-
       const parent = await Person.findById(person.parent);
-
-      parent.children = parent.children.filter(
-        child => child.toString() !== id
-      );
-
-      await parent.save();
+      if (parent) { 
+        parent.children = parent.children.filter(
+          child => child.toString() !== id
+        );
+        await parent.save();
+      }
     }
 
-    await Person.findByIdAndDelete(id);
+    // Delete all descendants
+    await deleteRecursively(id);
 
     res.json({
-      message: "Person deleted successfully"
+      message: "Person and descendants deleted successfully"
     });
 
   } catch (error) {
-
     res.status(500).json({ message: error.message });
-
   }
-
 };

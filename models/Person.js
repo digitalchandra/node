@@ -7,6 +7,11 @@ const personSchema = new mongoose.Schema(
     required: true
   },
 
+  details: {
+    type: String,
+    default: ""
+  },
+
   gender: {
     type: String,
     enum: ["male", "female"],
@@ -23,7 +28,8 @@ const personSchema = new mongoose.Schema(
   },
 
   spouse: {
-    type: String
+    type: String,
+    default: ""
   },
 
   parent: {
